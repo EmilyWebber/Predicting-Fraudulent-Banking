@@ -1,6 +1,9 @@
+from __future__ import division
 import csv
 import random
 import pandas as pd
+import matplotlib.pyplot as plt
+plt.style.use("ggplot")
 
 def read_the_csv(filename):
 	rt = []
@@ -65,6 +68,65 @@ def drop_columns(rows):
 
 	return rt
 
+def graph_missing_values(values):
+	plt.plot(values)
+	plt.title("Distribution of missing values")
+	plt.ylabel("Count of missing values")
+	plt.xlabel("Column number the count refers to")
+	plt.show()
+
+def check_integer_conversion(rows):
+	print "About to check {} rows for integer compatibility".format(len(rows))
+	rt = []
+
+	drop_columns = {}
+
+	for row in rows[1:]:
+		for idx, each in enumerate(row):
+			try:
+				i = int(each)
+			except:
+				if idx not in drop_columns:
+					drop_columns[idx] = 0
+				else:
+					drop_columns[idx] += 1
+
+	# v = list(drop_columns.values())
+
+	# v.sort()
+
+	# based on this graph I'm decided to only use features when their count of missing values is <= 175.
+	# pretty clear jump in the graph to back that up
+	# graph_missing_values(v)
+
+	for row in rows:
+		new_row = []
+		for idx, each in enumerate(row):
+			count = drop_columns[idx]
+			if count <= 175:
+				new_row.append(each)
+		rt.append(new_row)
+
+	dropped = 0
+
+	for key, value in drop_columns.items():
+		if value <= 175:
+			dropped += 1
+
+	print "Found {} columns to drop because of missing values, keeping {}".format(dropped, len(rows[0]) - dropped)
+
+	return rt
+
+def label_the_data(rows):
+
+	rows[0].append("Label")
+
+	for row in rows[1:]:
+		label = random.randint(0, 1)
+		row.append(label)
+
+	return rows
+
 
 if __name__ == "__main__":
 	rows = read_the_csv("../Data/bhcf1609.csv")
@@ -73,4 +135,10 @@ if __name__ == "__main__":
 
 	rows = drop_columns(rows)
 
-	# write_to_disk(rows, "../Building-Data/buildme.csv", "../Scoring-Data/scoreme.csv", 9)
+	rows = check_integer_conversion(rows)
+
+	print "========================================"
+
+	rows = label_the_data(rows)
+
+	write_to_disk(rows, "../Building-Data/buildme.csv", "../Scoring-Data/scoreme.csv", 9)
